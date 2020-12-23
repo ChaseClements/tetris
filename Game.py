@@ -17,7 +17,7 @@ def main():
     FPS = 60
     clock = pygame.time.Clock()
     menu_buttons, game_buttons = create_buttons()
-    background, tetrominos = create_game_surfaces()
+    tetrominos = create_game_surfaces()
     while run:
         clock.tick(FPS)
         window.fill((100, 150, 205))
@@ -25,8 +25,8 @@ def main():
         if menu:
             display_menu(pos, menu_buttons)
         else:
-            display_game(pos, background, tetrominos, game_buttons)
-        run, menu = check_events(pos, menu)
+            display_game(pos, tetrominos, game_buttons)
+        run, menu = check_events(pos, menu, tetrominos)
         pygame.display.update()
 
 def create_buttons():
@@ -61,20 +61,6 @@ def create_game_surfaces():
         This function creates the surfaces with which the game
         will be played.
     """
-    def make_background():
-        """
-            This function creates the background where the player
-            actually plays.
-        """
-        playground = pygame.Surface((251, 501))
-        playground.fill((0, 0, 0))
-        for i in range(10):
-            pygame.draw.line(playground, (255, 255, 255), (i*25, 0), (i*25, 500))
-        for i in range(20):
-            pygame.draw.line(playground, (255, 255, 255), (0, i*25), (300, i*25))
-        pygame.draw.line(playground, (255, 255, 255), (0, 500), (250, 500))
-        pygame.draw.line(playground, (255, 255, 255), (250, 0), (250, 500))
-        return playground
     def make_tetrominos():
         """
             This functions creates the tetrominos (the shapes).
@@ -87,16 +73,16 @@ def create_game_surfaces():
         line = Line(line)
         tetrominos.append(line)
         return tetrominos
-    return make_background(), make_tetrominos()
+    return make_tetrominos()
 
-def check_events(pos, menu):
+def check_events(pos, menu, tetrominos):
     """
         This function checks all of the user's inputs. It takes in
         the mouse's position and a boolean representing whether or
         not the player is at the menu returns whether or not the
         game should continue running.
     """
-    def check_menu_events(pos):
+    def check_menu_clicks(pos):
         """
             This function handles mouse clicks that occur while
             the player is at the menu.
@@ -108,9 +94,18 @@ def check_events(pos, menu):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False, menu
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if menu:
-                menu = check_menu_events(pos)
+        if menu:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                    menu = check_menu_clicks(pos)
+        else:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    tetrominos[0].start_horizontal(-1)
+                if event.key == pygame.K_RIGHT:
+                    tetrominos[0].start_horizontal(1)
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    tetrominos[0].stop_horizontal()
     return True, menu
 
 def display_menu(pos, buttons):
@@ -125,14 +120,30 @@ def display_menu(pos, buttons):
     title = title_font.render('Tetris', False, (255, 255, 255))
     window.blit(title, (WIDTH // 2 - title.get_rect().width // 2, HEIGHT // 7))
 
-def display_game(pos, background, tetrominos, game_buttons):
+def display_game(pos, tetrominos, game_buttons):
     """
         This function displays the game when the player enters it
         from the menu.
     """
-    window.blit(background, (WIDTH // 2 - 125, HEIGHT // 2 - 250))
+    def make_background():
+        """
+            This function creates the background where the player
+            actually plays.
+        """
+        playground = pygame.Surface((251, 501))
+        playground.fill((0, 0, 0))
+        for i in range(10):
+            pygame.draw.line(playground, (255, 255, 255), (i*25, 0), (i*25, 500))
+        for i in range(20):
+            pygame.draw.line(playground, (255, 255, 255), (0, i*25), (300, i*25))
+        pygame.draw.line(playground, (255, 255, 255), (0, 500), (250, 500))
+        pygame.draw.line(playground, (255, 255, 255), (250, 0), (250, 500))
+        return playground
+    background = make_background()
     for tetromino in tetrominos:
+        tetromino.update_pos(pygame.time.get_ticks())
         background.blit(tetromino.surface, (tetromino.pos_x, tetromino.pos_y))
+    window.blit(background, (WIDTH // 2 - 125, HEIGHT // 2 - 250))
 
 main()
 pygame.quit()
