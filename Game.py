@@ -17,7 +17,7 @@ def main():
     FPS = 60
     clock = pygame.time.Clock()
     menu_buttons, game_buttons = create_buttons()
-    tetrominos = [make_tetromino()]
+    tetrominos = [make_tetromino([])]
     while run:
         clock.tick(FPS)
         window.fill((100, 150, 205))
@@ -56,7 +56,7 @@ def create_buttons():
         pass
     return create_menu_buttons(), []
 
-def make_tetromino():
+def make_tetromino(tetrominos):
     """
         This functions creates a tetromino.
     """
@@ -69,8 +69,8 @@ def make_tetromino():
             surface = pygame.Surface((25, 25))
             surface.fill((0, 200, 255))
             pygame.draw.rect(surface, (255, 255, 255), (0, 0, 25, 25), 1)
-            blocks.append(Block(surface, (i*25, -25)))
-        return Line(blocks)
+            blocks.append(Block(surface, (i*25 + 75, -25)))
+        return Line(blocks, tetrominos)
     return make_line()
 
 def check_events(pos, menu, tetrominos):
@@ -104,7 +104,6 @@ def check_events(pos, menu, tetrominos):
                 if event.key == pygame.K_DOWN:
                     tetrominos[-1].start_down()
                 if event.key == pygame.K_UP:
-                    pygame.transform.rotate(tetrominos[-1].surface, 90)
                     tetrominos[-1].shift()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -148,10 +147,10 @@ def display_game(pos, tetrominos, game_buttons):
     if tetrominos[-1].active:
         tetrominos[-1].update_pos(pygame.time.get_ticks(), tetrominos[:-1])
     else:
-        tetrominos.append(make_tetromino())
+        tetrominos.append(make_tetromino(tetrominos))
     for tetro in tetrominos:
         for block in tetro.blocks:
-            background.blit(block.surface, (tetro.pos_x + block.pos_x, block.pos_y))
+            background.blit(block.surface, (block.pos_x, block.pos_y))
     window.blit(background, (WIDTH // 2 - 125, HEIGHT // 2 - 250))
 
 main()
