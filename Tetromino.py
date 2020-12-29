@@ -5,7 +5,6 @@ class Tetromino:
         self.last_y = self.last_x = 0
         self.delay, self.delay_const = 1, 1
         self.active = True
-        self.barriers = set()
         self.__setup_barriers(tetrominos)
 
     def __setup_barriers(self, tetrominos):
@@ -13,11 +12,15 @@ class Tetromino:
             This method sets up the barriers set for use in the
             update_pos method.
         """
-        self.barriers.add((-25, self.blocks[0].pos_y))
-        self.barriers.add((250, self.blocks[0].pos_y))
+        self.barriers = set()
         for tetro in tetrominos:
             for block in tetro.blocks:
                 self.barriers.add((block.pos_x, block.pos_y))
+        for x in range(-50, 275, 25):
+            self.barriers.add((x, 500))
+        for y in range(-50, 525, 25):
+            self.barriers.add((-25, y))
+            self.barriers.add((250, y))
 
     def update_pos(self, time, tetrominos):
         """
@@ -27,7 +30,6 @@ class Tetromino:
             left and right by one block if the player wishes to.
         """
         if time - self.last_y >= 1000 // self.delay:
-            self.barriers.add((self.blocks[0].pos_x, 500))
             if all([(b.pos_x, b.pos_y + 25) not in self.barriers \
                                                     for b in self.blocks]):
                 for block in self.blocks:
@@ -37,8 +39,6 @@ class Tetromino:
             self.last_y = time
 
         if time - self.last_x >= 50:
-            self.barriers.add((-25, self.blocks[0].pos_y))
-            self.barriers.add((250, self.blocks[0].pos_y))
             if all([(b.pos_x + self.vel_x, b.pos_y) not in self.barriers \
                                                     for b in self.blocks]):
                 for block in self.blocks:
@@ -76,34 +76,90 @@ class Tetromino:
         """
         self.delay = self.delay_const
 
+    def shift(self):
+        """
+            This method changes the tetromino's orientation.
+        """
+        def rotate_block(block, direction):
+            """
+                This inner method rotates the position of any block
+                clockwise or counterclockwise by 90 degrees with respect
+                to the pivot.
+            """
+            rot_matrix = ((0, 1 * direction), (-1 * direction, 0))
+            pos = (block.pos_x - pivot.pos_x, block.pos_y - pivot.pos_y)
+            new_x = rot_matrix[0][0] * pos[0] + rot_matrix[0][1] * pos[1]
+            new_y = rot_matrix[1][0] * pos[0] + rot_matrix[1][1] * pos[1]
+            block.pos_x = new_x + pivot.pos_x
+            block.pos_y = new_y + pivot.pos_y
+        pivot = self.blocks[1]
+        for block in self.blocks:
+            rotate_block(block, 1)
+        if any([(b.pos_x, b.pos_y) in self.barriers for b in self.blocks]):
+            for block in self.blocks:
+                rotate_block(block, -1)
+
+    def fall(self, tetrominos, index, lowest_y):
+        # This method is broken
+        """
+            This method will allow the tetromino to fall once a
+            line has been completed by setting up the barriers again
+            and making to block go down until a barrier is reached.
+        """
+        self.__setup_barriers(tetrominos)
+        for x in range(-50, 275, 25):
+            self.barriers.add((x, lowest_y + 25))
+        for b in self.blocks:
+            while b.active and (b.pos_x, b.pos_y + 25) not in self.barriers:
+                b.pos_y += 25
+
 class Block:
     def __init__(self, surface, position):
         self.surface = surface
+        self.active = True
         self.pos_x = position[0]
         self.pos_y = position[1]
 
-class Line(Tetromino):
+    def remove_block(self):
+        """
+            This method makes the block disappear from the screen
+            and sets self.active to False.
+        """
+        self.active = False
+        self.pos_x = -500
+        self.pos_y = -500
+
+class L(Tetromino):
     def __init__(self, blocks, tetrominos):
         super().__init__(blocks, tetrominos)
-        self.horizontal = True
-        self.shift_num = 2
+
+class J(Tetromino):
+    def __init__(self, blocks, tetrominos):
+        super().__init__(blocks, tetrominos)
+
+class S(Tetromino):
+    def __init__(self, blocks, tetrominos):
+        super().__init__(blocks, tetrominos)
+
+class Z(Tetromino):
+    def __init__(self, blocks, tetrominos):
+        super().__init__(blocks, tetrominos)
+
+class I(Tetromino):
+    def __init__(self, blocks, tetrominos):
+        super().__init__(blocks, tetrominos)
+
+class T(Tetromino):
+    def __init__(self, blocks, tetrominos):
+        super().__init__(blocks, tetrominos)
+
+class O(Tetromino):
+    def __init__(self, blocks, tetrominos):
+        super().__init__(blocks, tetrominos)
 
     def shift(self):
         """
-            This method changes the line's orientation from
-            horizontal to vertical or vice versa.
+            This method overrides the shift method in the
+            parent class because squares cannot be shifted.
         """
-        if self.horizontal:
-            for i in range(len(self.blocks)):
-                self.blocks[i].pos_x = self.blocks[self.shift_num].pos_x
-                self.blocks[i].pos_y += 25 * (i - self.shift_num)
-            self.horizontal = False
-        else:
-            for i in range(len(self.blocks)):
-                self.blocks[i].pos_x += 25 * (i - self.shift_num)
-                self.blocks[i].pos_y = self.blocks[self.shift_num].pos_y
-            if self.shift_num == 1:
-                self.shift_num = 2
-            else:
-                self.shift_num = 1
-            self.horizontal = True
+        return
