@@ -99,19 +99,18 @@ class Tetromino:
             for block in self.blocks:
                 rotate_block(block, -1)
 
-    def fall(self, tetrominos, index, lowest_y):
-        # This method is broken
+    def fall(self, num_lines, lines):
         """
-            This method will allow the tetromino to fall once a
-            line has been completed by setting up the barriers again
-            and making to block go down until a barrier is reached.
+            This method will allow make the tetromino fall by the
+            amount of rows that were just completed.
         """
-        self.__setup_barriers(tetrominos)
-        for x in range(-50, 275, 25):
-            self.barriers.add((x, lowest_y + 25))
         for b in self.blocks:
-            while b.active and (b.pos_x, b.pos_y + 25) not in self.barriers:
-                b.pos_y += 25
+            if b.active:
+                num_lines = 0
+                for y in lines:
+                    if b.pos_y < y:
+                        num_lines += 1
+                b.pos_y += 25 * num_lines
 
 class Block:
     def __init__(self, surface, position):

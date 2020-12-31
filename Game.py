@@ -2,7 +2,7 @@ import pygame
 import random
 from Tetromino import *
 
-# Initialize pygame and do the pregame processing
+# Initialize pygame and create the window
 pygame.init()
 pygame.display.set_caption('Tetris')
 WIDTH, HEIGHT = 1000, 700
@@ -156,7 +156,7 @@ def make_tetromino(tetrominos):
         blocks.append(Block(make_block_surface(color), (125, -50)))
         blocks.append(Block(make_block_surface(color), (125, -25)))
         return O(blocks, tetrominos)
-    choice = random.randint(1, 7)
+    choice = (random.randint(0, 18200) % 7) + 1
     tetromino = None
     if choice == 1:
         tetromino = make_L()
@@ -225,11 +225,9 @@ def remove_tetrominos(tetrominos):
     for tetro in tetrominos:
         for block in tetro.blocks:
             block_locations.add((block.pos_x, block.pos_y))
-    lowest_y = -float('inf')
     for block in tetrominos[-1].blocks:
         y = block.pos_y
         if all([(x, y) in block_locations for x in range(0, 250, 25)]):
-            lowest_y = max(lowest_y, y)
             filled_lines.add(y)
     if len(filled_lines) > 0:
         for tetro in tetrominos:
@@ -242,8 +240,8 @@ def remove_tetrominos(tetrominos):
                 tetrominos.pop(i)
             else:
                 i += 1
-        for i in range(len(tetrominos)):
-            tetrominos[i].fall(tetrominos, i, lowest_y)
+        for tetro in tetrominos:
+            tetro.fall(len(filled_lines), filled_lines)
     return len(filled_lines) * 10
 
 def display_menu(pos, fonts, buttons):
@@ -285,7 +283,8 @@ def display_game(pos, fonts, tetrominos, game_buttons):
         tetrominos.append(make_tetromino(tetrominos))
     for tetro in tetrominos:
         for block in tetro.blocks:
-            background.blit(block.surface, (block.pos_x, block.pos_y))
+            if block.active:
+                background.blit(block.surface, (block.pos_x, block.pos_y))
     window.blit(background, (WIDTH // 2 - 125, HEIGHT // 2 - 250))
 
 main()
