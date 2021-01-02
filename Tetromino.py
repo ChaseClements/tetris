@@ -5,6 +5,7 @@ class Tetromino:
         self.last_y = self.last_x = 0
         self.delay, self.delay_const = 1, 1
         self.active = True
+        self.drop_point = True
         self.__setup_barriers(tetrominos)
 
     def __setup_barriers(self, tetrominos):
@@ -60,21 +61,14 @@ class Tetromino:
         """
         self.vel_x = 0
 
-    def start_down(self):
+    def drop(self):
         """
-            This method makes the tetromino fall faster while
-            the player is pressing the down arrow key.
+            Thid method makes the tetromino fall to the closest barrier.
         """
-        self.delay_const = self.delay
-        self.delay = 20
-
-    def stop_down(self):
-        """
-            This method returns the tetromino's down speed
-            to what it was before the user pressed the down
-            arrow key.
-        """
-        self.delay = self.delay_const
+        while all([(b.pos_x, b.pos_y + 25) not in self.barriers for b in self.blocks]):
+            for block in self.blocks:
+                block.pos_y += 25
+        self.active = False
 
     def shift(self):
         """

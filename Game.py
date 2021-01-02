@@ -1,12 +1,16 @@
 import pygame
 import random
 from Tetromino import *
+from Player import *
 
 # Initialize pygame and create the window
 pygame.init()
 pygame.display.set_caption('Tetris')
 WIDTH, HEIGHT = 1000, 700
 window = pygame.display.set_mode((WIDTH, HEIGHT))
+player = Player()
+fonts = [pygame.font.Font('freesansbold.ttf', 150),
+         pygame.font.Font('freesansbold.ttf', 50)]
 
 def main():
     """
@@ -15,30 +19,23 @@ def main():
     run = menu = True
     FPS = 60
     clock = pygame.time.Clock()
-    fonts = make_fonts()
-    menu_buttons, game_buttons = create_buttons(fonts)
+    player.dis_score = fonts[1].render(player.display_score(), False, (255, 255, 255))
+    player.dis_lines = fonts[1].render(player.display_lines(), False, (255, 255, 255))
+    player.dis_level = fonts[1].render(player.display_level(), False, (255, 255, 255))
+    menu_buttons, game_buttons = create_buttons()
     tetrominos = [make_tetromino([])]
     while run:
         clock.tick(FPS)
         window.fill((100, 150, 205))
         pos = pygame.mouse.get_pos()
         if menu:
-            display_menu(pos, fonts, menu_buttons)
+            display_menu(pos, menu_buttons)
         else:
-            display_game(pos, fonts, tetrominos, game_buttons)
+            display_game(pos, tetrominos, game_buttons)
         run, menu = check_events(pos, menu, tetrominos)
         pygame.display.update()
 
-def make_fonts():
-    """
-        This function makes the fonts for the game.
-    """
-    fonts = []
-    fonts.append(pygame.font.Font('freesansbold.ttf', 150))
-    fonts.append(pygame.font.Font('freesansbold.ttf', 50))
-    return fonts
-
-def create_buttons(fonts):
+def create_buttons():
     """
         This function creates the buttons for the game.
     """
@@ -203,14 +200,14 @@ def check_events(pos, menu, tetrominos):
                 if event.key == pygame.K_RIGHT:
                     tetrominos[-1].start_horizontal(1)
                 if event.key == pygame.K_DOWN:
-                    tetrominos[-1].start_down()
+                    tetrominos[-1].drop()
+                    player.score += 1
+                    player.dis_score = fonts[1].render(player.display_score(), False, (255, 255, 255))
                 if event.key == pygame.K_UP:
                     tetrominos[-1].shift()
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     tetrominos[-1].stop_horizontal()
-                if event.key == pygame.K_DOWN:
-                    tetrominos[-1].stop_down()
     return True, menu
 
 def remove_tetrominos(tetrominos):
@@ -242,9 +239,9 @@ def remove_tetrominos(tetrominos):
                 i += 1
         for tetro in tetrominos:
             tetro.fall(len(filled_lines), filled_lines)
-    return len(filled_lines) * 10
+    return len(filled_lines)
 
-def display_menu(pos, fonts, buttons):
+def display_menu(pos, buttons):
     """
         This function displays the menu when the player is at the menu.
     """
@@ -256,7 +253,7 @@ def display_menu(pos, fonts, buttons):
     title = fonts[0].render('Tetris', False, (255, 255, 255))
     window.blit(title, (WIDTH // 2 - title.get_rect().width // 2, HEIGHT // 7))
 
-def display_game(pos, fonts, tetrominos, game_buttons):
+def display_game(pos, tetrominos, game_buttons):
     """
         This function displays the game when the player enters it
         from the menu.
@@ -279,12 +276,25 @@ def display_game(pos, fonts, tetrominos, game_buttons):
     if tetrominos[-1].active:
         tetrominos[-1].update_pos(pygame.time.get_ticks(), tetrominos[:-1])
     else:
-        remove_tetrominos(tetrominos)
+        lines_increase = 0
+        lines_increase += remove_tetrominos(tetrominos)
         tetrominos.append(make_tetromino(tetrominos))
+        if lines_increase > 0:
+            player.score += lines_increase * 10
+            player.dis_score = fonts[1].render(player.display_score(), False, (255, 255, 255))
+            player.lines += lines_increase
+            player.dis_lines = fonts[1].render(player.display_lines(), False, (255, 255, 255))
+            player.level = player.lines // 10
+            player.dis_level = fonts[1].render(player.display_level(), False, (255, 255, 255))
+        tetrominos[-1].delay = min(10, 1 + player.level)
     for tetro in tetrominos:
         for block in tetro.blocks:
             if block.active:
                 background.blit(block.surface, (block.pos_x, block.pos_y))
+    spacing =  HEIGHT // 7
+    window.blit(player.dis_score, (WIDTH // 11, spacing))
+    window.blit(player.dis_lines, (WIDTH // 11, 1.5 * spacing))
+    window.blit(player.dis_level, (WIDTH // 11, 2 * spacing))
     window.blit(background, (WIDTH // 2 - 125, HEIGHT // 2 - 250))
 
 main()
